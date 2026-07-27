@@ -1,0 +1,108 @@
+// ER Throughput Analytics — DAX measures for Power BI
+//
+// Paste into new measures (Modeling > New measure). Kept in the repo so the
+// measure logic is reviewable in diffs rather than buried in the .pbix binary.
+//
+// Source tables are the dbt marts exported by `make export`:
+//   fct_er_visit        one row per ER visit
+//   agg_daily_ops       one row per day, incl. pre-computed SPC control limits
+//   agg_hourly_arrivals one row per date x hour
+//   dim_date            marked as the report date table
+//
+// IMPORTANT: percentiles and control limits are NOT recomputed here. They come
+// from the dbt aggregates, so Power BI and the Streamlit app cannot disagree.
+// Anything below that looks like a calculation is a rollup, not a redefinition.
+
+
+// ---------- Volume ----------
+
+Visits =
+COUNTROWS ( fct_er_visit )
+
+Visits PM =
+CALCULATE ( [Visits], DATEADD ( dim_date[date_day], -1, MONTH ) )
+
+Visits MoM % =
+DIVIDE ( [Visits] - [Visits PM], [Visits PM] )
+
+
+// ---------- Wait performance ----------
+// Median and P90 are averaged up from agg_daily_ops rather than recomputed over
+// fct_er_visit: a percentile-of-percentiles is not the pooled percentile, so
+// use these for trend shape and read the pooled figure from the dbt mart when a
+// single exact number is needed. Stated here so nobody silently mis-reads it.
+
+Median Wait (daily avg) =
+AVERAGE ( agg_daily_ops[median_wait_minutes] )
+
+P90 Wait (daily avg) =
+AVERAGE ( agg_daily_ops[p90_wait_minutes] )
+
+Mean Wait =
+AVERAGE ( fct_er_visit[wait_minutes] )
+// Kept only for the skew demonstration on the Service Quality page.
+// Do NOT use as a headline KPI -- see docs/measure_spec.md.
+
+Within Target Visits =
+CALCULATE ( COUNTROWS ( fct_er_visit ), fct_er_visit[within_target_flag] = TRUE )
+
+% Within Target =
+DIVIDE ( [Within Target Visits], [Visits] )
+
+% Within Target PM =
+CALCULATE ( [% Within Target], DATEADD ( dim_date[date_day], -1, MONTH ) )
+
+% Within Target Delta =
+[% Within Target] - [% Within Target PM]
+
+
+// ---------- Case mix proxy ----------
+
+Admissions =
+CALCULATE ( COUNTROWS ( fct_er_visit ), fct_er_visit[admitted_flag] = TRUE )
+
+Admission Rate =
+DIVIDE ( [Admissions], [Visits] )
+
+
+// ---------- Satisfaction (always shown together) ----------
+
+Satisfaction Responses =
+CALCULATE ( COUNTROWS ( fct_er_visit ), NOT ISBLANK ( fct_er_visit[satisfaction_score] ) )
+
+Satisfaction Response Rate =
+DIVIDE ( [Satisfaction Responses], [Visits] )
+
+Mean Satisfaction =
+AVERAGE ( fct_er_visit[satisfaction_score] )
+// Responders only. NEVER place this card without [Satisfaction Response Rate]
+// beside it -- see docs/limitations.md on non-response bias.
+
+
+// ---------- SPC (limits come from dbt, not from DAX) ----------
+
+Wait Centre Line =
+AVERAGE ( agg_daily_ops[wait_centre_line] )
+
+Wait UCL =
+AVERAGE ( agg_daily_ops[wait_ucl] )
+
+Wait LCL =
+AVERAGE ( agg_daily_ops[wait_lcl] )
+
+Out of Control Days =
+CALCULATE ( COUNTROWS ( agg_daily_ops ), agg_daily_ops[spc_signal] <> BLANK () )
+
+// Colour rule for the control chart marker. Pair with a distinct marker shape
+// and a label -- an SPC signal must never be carried by colour alone.
+SPC Point Colour =
+IF ( SELECTEDVALUE ( agg_daily_ops[spc_signal] ) <> BLANK (), "#d03b3b", "#2a78d6" )
+
+
+// ---------- Demand ----------
+
+Arrivals per Hour =
+AVERAGE ( agg_hourly_arrivals[arrivals] )
+
+Peak Hour Arrivals =
+MAXX ( VALUES ( dim_time_of_day[hour_of_day] ), [Arrivals per Hour] )

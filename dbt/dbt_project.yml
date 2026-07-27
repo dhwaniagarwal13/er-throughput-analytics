@@ -1,0 +1,34 @@
+name: er_throughput
+version: "0.1.0"
+config-version: 2
+
+profile: er_throughput
+
+model-paths: ["models"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+seed-paths: ["seeds"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  # Service-level target: the share of patients seen within this many minutes
+  # is the department's headline operational KPI. Kept as a var so the whole
+  # warehouse can be rebuilt against a different target without editing SQL.
+  wait_target_minutes: 30
+
+  # Waits beyond this are treated as data-quality suspects, not real waits.
+  # Flagged in staging rather than dropped -- see docs/limitations.md.
+  max_plausible_wait_minutes: 240
+
+  # SPC control limits use the standard 3-sigma bound.
+  spc_sigma: 3
+
+models:
+  er_throughput:
+    staging:
+      +materialized: view
+      +schema: staging
+    marts:
+      +materialized: table
+      +schema: marts
