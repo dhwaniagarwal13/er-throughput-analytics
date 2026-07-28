@@ -27,7 +27,7 @@ for _d in (RAW, EXPORTS):
 # is not committed -- it is not ours to redistribute -- so `make ingest` pulls
 # it and this is the one place that knows where from.
 KAGGLE_DATASET = os.environ.get(
-    "ER_KAGGLE_DATASET", "yashsahu02/hospital-emergency-room-data"
+    "ER_KAGGLE_DATASET", "laxdippatel/hospital-emergency-room-dataset"
 )
 
 # Where ingest looks / writes. Any CSV dropped here by hand is picked up too,
