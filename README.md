@@ -123,7 +123,7 @@ The Kaggle CSV is not committed. `make ingest` fetches it via `kagglehub`, or yo
 - [x] Phase 0 — profile raw data, write `docs/data_dictionary.md`
 - [x] Phase 1 — staging model, star schema, dbt tests green
 - [x] Phase 2 — aggregate models (SPC limits, segment CIs)
-- [ ] Phase 3 — analysis notebooks (demand, wait distribution, load-vs-wait, SPC, non-response, segments)
+- [x] Phase 3 — 7 analysis notebooks (demand, wait distribution, load-vs-wait, SPC, non-response, segments), each executed and ending in an Executive Summary / Recommendations / Limitations / Next Steps
 - [ ] Phase 4 — Streamlit app
 - [ ] Phase 5 — Power BI report + written findings
 
