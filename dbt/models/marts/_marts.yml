@@ -74,3 +74,37 @@ models:
           - accepted_values:
               arguments:
                 values: [true, false]
+
+  - name: agg_hourly_arrivals
+    description: One row per (visit_date x hour_of_day).
+    columns:
+      - name: visit_date
+        tests:
+          - not_null
+      - name: hour_of_day
+        tests:
+          - not_null
+
+  - name: agg_daily_ops
+    description: One row per day, with pre-computed XmR (median wait) and p-chart (admission rate) control limits.
+    columns:
+      - name: visit_date
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_day
+
+  - name: agg_segment_waits
+    description: One row per patient segment, with median/P90 wait and a 95% CI on the median.
+    columns:
+      - name: segment_key
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_patient_segment')
+                field: segment_key
