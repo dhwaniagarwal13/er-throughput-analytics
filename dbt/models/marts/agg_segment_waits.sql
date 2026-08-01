@@ -8,6 +8,10 @@
 --
 -- 30 is this project's minimum-cell-size convention (docs/limitations.md: "segments
 -- below a minimum cell size are suppressed rather than plotted as if meaningful").
+-- Suppression is enforced here, not left to the chart layer: point estimates and the
+-- CI are nulled below the threshold so a single-patient cell (n=1) never surfaces an
+-- identifiable wait time under a demographic key -- n_visits/n_plausible stay visible
+-- so the suppression itself is auditable, per low_n_flag.
 with segment_waits as (
 
     select
@@ -34,10 +38,14 @@ select
     race,
     n_visits,
     n_plausible,
-    median_wait_minutes,
-    p90_wait_minutes,
-    mean_wait_minutes,
-    median_wait_minutes - 1.96 * (1.2533 * stddev_wait_minutes / sqrt(n_plausible)) as ci_lower,
-    median_wait_minutes + 1.96 * (1.2533 * stddev_wait_minutes / sqrt(n_plausible)) as ci_upper,
+    case when n_plausible >= 30 then median_wait_minutes end as median_wait_minutes,
+    case when n_plausible >= 30 then p90_wait_minutes end as p90_wait_minutes,
+    case when n_plausible >= 30 then mean_wait_minutes end as mean_wait_minutes,
+    case when n_plausible >= 30
+        then median_wait_minutes - 1.96 * (1.2533 * stddev_wait_minutes / sqrt(n_plausible))
+    end as ci_lower,
+    case when n_plausible >= 30
+        then median_wait_minutes + 1.96 * (1.2533 * stddev_wait_minutes / sqrt(n_plausible))
+    end as ci_upper,
     n_plausible < 30 as low_n_flag
 from segment_waits
