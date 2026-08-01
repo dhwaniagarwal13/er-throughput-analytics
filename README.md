@@ -4,7 +4,9 @@ An end-to-end analytics platform for emergency-department operations: how demand
 
 Built on the Maven Analytics **Hospital Emergency Room** dataset (~9K visits) with a DuckDB + dbt warehouse feeding two dashboards — an interactive Streamlit app for analysts and a Power BI report for executives.
 
-> **Status: in progress.** The warehouse skeleton and pipeline scaffolding are in place; models, notebooks and dashboards are landing incrementally. See the [roadmap](#roadmap).
+> **Status: analytics complete.** Warehouse, 7 analysis notebooks, and the Streamlit dashboard are built, executed, and validated (34/34 dbt tests, 3/3 pytest, `ruff` clean — see [`docs/validation.md`](docs/validation.md)). The Power BI **assets** (CSV exports, DAX measures, theme) are regenerated and current; assembling the `.pbix` itself in Power BI Desktop is the one remaining manual step — see [`dashboard/README.md`](dashboard/README.md). See the [roadmap](#roadmap).
+>
+> One-page version for recruiters/hiring managers: [`executive_summary.md`](executive_summary.md). Full findings: [`docs/findings.md`](docs/findings.md).
 
 ---
 
@@ -95,6 +97,34 @@ No predictive modelling: this is a descriptive analytics project by design, and 
 
 ---
 
+## Key insights
+
+Five findings from the full analysis (`docs/findings.md` has the complete report with methodology and caveats for each):
+
+1. **Stable process, missed target.** Only 3 of 579 days trigger an SPC signal, yet only 40.7% of visits meet the 30-minute target — every month misses it. Stability and target attainment are independent; this department is stable at the wrong level.
+2. **No capacity signal in the data.** Hourly arrival volume correlates with wait time at r = -0.01 — essentially zero. A volume-triggered staffing rule is not supported here.
+3. **Demand is nearly flat.** Daily arrivals have a coefficient of variation of 0.23 with no strong diurnal or weekly cycle — unusual for a real ED and flagged as a provenance caveat, not taken at face value.
+4. **Survey non-response isn't explained by wait time or admission.** Both correlations are negligible (|r| < 0.02) for the 27.3%-response satisfaction score.
+5. **No systematic demographic wait-time gap.** Group medians cluster within minutes across gender, age, and race; the one statistically distinguishable extreme-segment gap is one comparison out of 86, not a pattern — and without acuity data, not evidence of differential treatment either way.
+
+## Repository structure
+
+```
+er-throughput-analytics/
+├── src/erops/            # config, ingest, profile, and the shared metrics.py query module
+├── dbt/                  # staging model, star-schema marts, dbt tests
+├── notebooks/            # 00_profile ... 06_segment_equity -- 7 executed consulting-style notebooks
+├── app/streamlit_app.py  # 7-tab live dashboard (Overview, Demand, Wait Times, Stability, ...)
+├── dashboard/            # Power BI theme, DAX measures, build instructions (dashboard/README.md)
+├── data/                 # raw/ (git-ignored source CSV), exports/ (Power BI CSVs), er.duckdb
+├── docs/                 # measure_spec, limitations, data_dictionary, findings, metric_catalog,
+│                         # business_questions, architecture, validation, performance
+├── tests/                # pytest -- Python/dbt config parity
+└── executive_summary.md  # one-page version of this project for recruiters/hiring managers
+```
+
+---
+
 ## Tech stack
 
 Python 3.11 · DuckDB · dbt (dbt-duckdb) · pandas · Streamlit · Plotly · Power BI · pytest · ruff
@@ -111,9 +141,12 @@ make build       # dbt run -> data/er.duckdb
 make test        # dbt tests + pytest
 make export      # data/exports/*.csv for Power BI
 make app         # launch the Streamlit dashboard
+jupyter nbconvert --to notebook --execute --inplace notebooks/*.ipynb   # re-run all 7 notebooks
 ```
 
 The Kaggle CSV is not committed. `make ingest` fetches it via `kagglehub`, or you can download it manually and unzip into `data/raw/` — the loader accepts either.
+
+After `make build`, open any notebook in `notebooks/` or run `make app` to explore interactively — both read the same warehouse through `src/erops/metrics.py`, so their numbers cannot disagree.
 
 ---
 
@@ -125,9 +158,23 @@ The Kaggle CSV is not committed. `make ingest` fetches it via `kagglehub`, or yo
 - [x] Phase 2 — aggregate models (SPC limits, segment CIs)
 - [x] Phase 3 — 7 analysis notebooks (demand, wait distribution, load-vs-wait, SPC, non-response, segments), each executed and ending in an Executive Summary / Recommendations / Limitations / Next Steps
 - [x] Phase 4 — Streamlit app, all 7 tabs live (Overview, Demand, Wait Times, Operational Stability, Patient Satisfaction, Equity, Data Quality)
-- [ ] Phase 5 — Power BI report + written findings
+- [x] Phase 5 — Power BI assets regenerated (CSV exports, DAX measures, theme) and written findings (`docs/findings.md`) complete. `.pbix` assembly itself is a manual Power BI Desktop step (no Power BI automation tool exists in this environment) — see [`dashboard/README.md`](dashboard/README.md).
 
 ---
+
+## Documentation
+
+| Doc | What it's for |
+|---|---|
+| [`docs/measure_spec.md`](docs/measure_spec.md) | Exact numerator/denominator/exclusion for every metric, plus SPC methodology. |
+| [`docs/metric_catalog.md`](docs/metric_catalog.md) | Business meaning, formula, source table, and owner for every KPI. |
+| [`docs/business_questions.md`](docs/business_questions.md) | The 7 questions this project answers, the metric used, and the business implication. |
+| [`docs/findings.md`](docs/findings.md) | Full executive findings report — read this first if you want the "so what," not the code. |
+| [`docs/architecture.md`](docs/architecture.md) | Pipeline diagram and layer responsibilities. |
+| [`docs/validation.md`](docs/validation.md) | What was checked, the command run, and the real result. |
+| [`docs/performance.md`](docs/performance.md) | Warehouse size, query latency, notebook and dashboard timings. |
+| [`docs/data_dictionary.md`](docs/data_dictionary.md) | Raw column mapping and every mart's grain and columns. |
+| [`docs/limitations.md`](docs/limitations.md) | What this dataset cannot support — read alongside every finding. |
 
 ## Data & limitations
 

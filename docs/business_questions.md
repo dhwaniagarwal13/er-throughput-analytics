@@ -1,0 +1,18 @@
+# Business questions
+
+The single-sentence question each notebook and dashboard tab exists to answer, the metric used to
+answer it, the finding, and what it means for the business. Every finding below is computed live from
+`data/er.duckdb` by `src/erops/metrics.py` — see the linked notebook for the executable version.
+
+| # | Question | Metric used | Finding | Business implication |
+|---|---|---|---|---|
+| 1 | What is actually in this warehouse, and is it trustworthy? | Row counts, null %, duplicate check, date-coverage check (`notebooks/00_profile.ipynb`) | 9,216 visits, 0 duplicate IDs, 0 implausible waits, gap-free 579-day calendar (2023-04-01 to 2024-10-30). Only `satisfaction_score` has material missingness (72.7%), which is structural non-response. | Safe to build every downstream KPI directly from this warehouse with no reconciliation step. |
+| 2 | Is arrival volume predictable enough to staff against? | Daily-arrivals coefficient of variation, weekday vs. weekend average (`notebooks/01_demand_patterns.ipynb`) | CV = 0.23; weekday avg 15.8/day vs. weekend avg 16.2/day (+2.8%); no hour-of-day or day-of-week peak. | A flat, uniform staffing roster is defensible from this data — no day- or hour-specific overstaffing is supported. |
+| 3 | What does a typical wait look like, and is the mean reliable? | Median, P90, skewness, kurtosis, % within 30-min target (`notebooks/02_wait_distribution.ipynb`) | Median 35 min, P90 56 min, skew ≈ 0 (symmetric, no long tail); only 40.7% of visits meet the 30-minute target. | The gap to target affects the typical patient, not a handful of outliers — fix throughput broadly, not tail cases. |
+| 4 | At what arrival volume does wait time degrade? | Pearson correlation and quintile breakdown of hourly arrivals vs. median wait (`notebooks/03_load_vs_wait.ipynb`) | r = -0.01; average wait is flat (34.5-36.0 min) across all five volume quintiles. | No volume threshold in this data to trigger surge staffing; the wait-time gap is not explained by concurrent patient load. |
+| 5 | Is the wait-time process in statistical control, or drifting? | XmR chart (daily median wait) and p-chart (daily admission rate) signal counts (`notebooks/04_spc.ipynb`) | Only 3 of 579 days (0.5%) signal on the wait chart, 1 of 579 (0.2%) on the admission chart; no trend. | The process is stable but consistently below target — the fix is structural (process/capacity), not a reaction to daily noise. |
+| 6 | Does survey non-response bias the reported satisfaction score? | Response rate by wait bucket / admission status, point-biserial correlation (`notebooks/05_satisfaction.ipynb`) | 27.3% response rate; corr(wait, responded) = 0.004, corr(admitted, responded) = -0.012 — both negligible. | The two most obvious bias mechanisms (long waits, being admitted) are ruled out; response rate must still always accompany the score. |
+| 7 | Does wait time differ by patient demographic group, and is any gap real? | Median wait by gender / age band / race; 95% CI on the most extreme segments (`notebooks/06_segment_equity.ipynb`) | Group medians cluster within a few minutes on every dimension; the single largest gap (top vs. bottom of 86 segments) has non-overlapping CIs but is one extreme comparison, not a pattern. | No dimension shows a systematic disparity; the single extreme pair merits a qualitative review, not a policy conclusion — and without acuity data, even a real gap isn't proof of inequity. |
+
+See `docs/metric_catalog.md` for the formal definition of every metric referenced above, and
+`docs/limitations.md` for what this dataset cannot support.
