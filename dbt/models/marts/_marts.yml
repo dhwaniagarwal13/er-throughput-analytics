@@ -1,0 +1,76 @@
+version: 2
+
+models:
+  - name: dim_date
+    description: One row per calendar day, continuous from the first to the last observed visit date.
+    columns:
+      - name: date_day
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_time_of_day
+    description: One row per hour of day (0-23).
+    columns:
+      - name: hour_of_day
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_patient_segment
+    description: One row per distinct (age_band, gender, race) combination present in the data.
+    columns:
+      - name: segment_key
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_department
+    description: One row per referral department, including the explicit "None" (no referral) member.
+    columns:
+      - name: department_referral
+        tests:
+          - unique
+          - not_null
+
+  - name: fct_er_visit
+    description: One row per ER visit.
+    columns:
+      - name: visit_id
+        tests:
+          - unique
+          - not_null
+      - name: visit_date
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_day
+      - name: visit_hour
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_time_of_day')
+                field: hour_of_day
+      - name: segment_key
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_patient_segment')
+                field: segment_key
+      - name: department_referral
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_department')
+                field: department_referral
+      - name: admitted_flag
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]

@@ -1,9 +1,11 @@
 # Kept in-repo (not ~/.dbt) so the project runs after a clone with no setup.
-# Paths are relative to the dbt project dir, so there is nothing machine-specific.
+# path is absolute via ER_ROOT (set by the Makefile) rather than relative to the
+# dbt project dir, so `dbt run --project-dir dbt --profiles-dir dbt` resolves the
+# same warehouse file no matter what directory it's invoked from.
 er_throughput:
   target: dev
   outputs:
     dev:
       type: duckdb
-      path: ../data/er.duckdb
+      path: "{{ env_var('ER_ROOT') }}/data/er.duckdb"
       threads: 4

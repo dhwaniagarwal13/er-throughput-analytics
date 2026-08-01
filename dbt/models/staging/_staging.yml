@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: stg_er_visits
+    description: >
+      Typed, snake_case pass-through of the raw ER visit CSV, one row per visit.
+      Quality flags computed here (wait_implausible_flag) are carried, not filtered.
+    columns:
+      - name: visit_id
+        description: Natural key from the source "Patient Id" column; unique per visit.
+        tests:
+          - unique
+          - not_null
+      - name: visit_date
+        tests:
+          - not_null
+      - name: wait_minutes
+        tests:
+          - not_null
+      - name: gender
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["M", "F", "NC"]
+      - name: segment_key
+        tests:
+          - not_null

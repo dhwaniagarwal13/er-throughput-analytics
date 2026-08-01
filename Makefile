@@ -1,5 +1,6 @@
 PY := .venv/Scripts/python.exe
-DBT := ../.venv/Scripts/dbt.exe
+DBT := .venv/Scripts/dbt.exe
+DBT_FLAGS := --project-dir dbt --profiles-dir dbt
 
 # Absolute repo root. dbt models resolve the raw CSV path against it (see
 # stg_er_visits.sql) so the warehouse can be built from any working directory,
@@ -32,10 +33,10 @@ profile:
 	$(PY) -m erops.profile
 
 build:
-	cd dbt && $(DBT) run
+	$(DBT) run $(DBT_FLAGS)
 
 test:
-	cd dbt && $(DBT) test
+	$(DBT) test $(DBT_FLAGS)
 	$(PY) -m pytest -q
 
 export:
