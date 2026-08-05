@@ -7,10 +7,10 @@ not a claim, a log.
 
 | Check | Command | Result |
 |---|---|---|
-| ✅ dbt data tests | `dbt test --project-dir dbt --profiles-dir dbt` | **34 of 34 passed** (uniqueness, not-null, and referential-integrity tests across every mart). |
-| ✅ Python unit tests | `pytest -q` | **3 of 3 passed** (`tests/test_config_matches_dbt.py` — confirms `WAIT_TARGET_MINUTES`, `MAX_PLAUSIBLE_WAIT_MINUTES`, `SPC_SIGMA` are identical between `src/erops/config.py` and `dbt/dbt_project.yml`). |
-| ✅ Lint | `ruff check src app tests` | **All checks passed**, zero warnings. |
-| ✅ Notebook execution | `jupyter nbconvert --to notebook --execute --inplace notebooks/*.ipynb` | All 7 notebooks execute end-to-end from a clean kernel with no errors; outputs committed are real, not hand-typed. |
+| dbt data tests | `dbt test --project-dir dbt --profiles-dir dbt` | **34 of 34 passed** (uniqueness, not-null, and referential-integrity tests across every mart). |
+| Python unit tests | `pytest -q` | **3 of 3 passed** (`tests/test_config_matches_dbt.py` — confirms `WAIT_TARGET_MINUTES`, `MAX_PLAUSIBLE_WAIT_MINUTES`, `SPC_SIGMA` are identical between `src/erops/config.py` and `dbt/dbt_project.yml`). |
+| Lint | `ruff check src app tests` | All checks passed, zero warnings. |
+| Notebook execution | `jupyter nbconvert --to notebook --execute --inplace notebooks/*.ipynb` | All 7 notebooks execute end-to-end from a clean kernel with no errors; outputs committed are real, not hand-typed. |
 
 ## Cross-artifact reconciliation
 
@@ -20,10 +20,10 @@ theory:
 
 | Check | Method | Result |
 |---|---|---|
-| ✅ Notebook metrics equal SQL | Every notebook calls `erops.metrics.*` functions directly — there is no separate SQL to drift from. | By construction: 7/7 notebooks import and call the shared module (zero inline `con.execute` calls outside `00_profile.ipynb`'s one-off, notebook-only categorical breakdown, which itself queries the same mart). |
-| ✅ Streamlit KPIs reconcile | Manual browser walkthrough of all 7 tabs (`app/streamlit_app.py`) against notebook output. | Confirmed identical: Visits 9,216; Median wait 35 min; P90 56 min; % within target 40.7%; Admission rate 50.0%; Satisfaction response rate 27.3%; Mean satisfaction 4.99; SPC signal days 3 (wait) / 1 (admit); Segment low-n 16/86 (18.6%). No console errors, no exceptions, on any tab. |
-| ✅ Exported CSVs validated | `python -m erops.export_dashboard`, re-run against the current warehouse. | Row counts match the live marts exactly: `fct_er_visit` 9,216, `agg_daily_ops` 579, `agg_hourly_arrivals` 6,757, `agg_segment_waits` 86, `dim_date` 579, `dim_time_of_day` 24, `dim_patient_segment` 86, `dim_department` 8. |
-| ✅ Power BI assets regenerated | `powerbi_theme.json` JSON-validated, `dax_measures.txt` reviewed against `docs/measure_spec.md` (no metric is recomputed in DAX — every percentile and control limit is sourced from the dbt aggregate). | Current as of the latest export; `.pbix` assembly itself remains a manual Power BI Desktop step (see `dashboard/README.md`). |
+| Notebook metrics equal SQL | Every notebook calls `erops.metrics.*` functions directly — there is no separate SQL to drift from. | By construction: 7/7 notebooks import and call the shared module (zero inline `con.execute` calls outside `00_profile.ipynb`'s one-off, notebook-only categorical breakdown, which itself queries the same mart). |
+| Streamlit KPIs reconcile | Manual browser walkthrough of all 7 tabs (`app/streamlit_app.py`) against notebook output. | Confirmed identical: Visits 9,216; Median wait 35 min; P90 56 min; % within target 40.7%; Admission rate 50.0%; Satisfaction response rate 27.3%; Mean satisfaction 4.99; SPC signal days 3 (wait) / 1 (admit); Segment low-n 16/86 (18.6%). No console errors, no exceptions, on any tab. |
+| Exported CSVs validated | `python -m erops.export_dashboard`, re-run against the current warehouse. | Row counts match the live marts exactly: `fct_er_visit` 9,216, `agg_daily_ops` 579, `agg_hourly_arrivals` 6,757, `agg_segment_waits` 86, `dim_date` 579, `dim_time_of_day` 24, `dim_patient_segment` 86, `dim_department` 8. |
+| Power BI assets regenerated | `powerbi_theme.json` JSON-validated, `dax_measures.txt` reviewed against `docs/measure_spec.md` (no metric is recomputed in DAX — every percentile and control limit is sourced from the dbt aggregate). | Current as of the latest export; `.pbix` assembly itself remains a manual Power BI Desktop step (see `dashboard/README.md`). |
 
 ## Data-quality validation (warehouse itself)
 
