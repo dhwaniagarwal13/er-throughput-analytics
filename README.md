@@ -175,6 +175,7 @@ After `make build`, open any notebook in `notebooks/` or run `make app` to explo
 | [`docs/performance.md`](docs/performance.md) | Warehouse size, query latency, notebook and dashboard timings. |
 | [`docs/data_dictionary.md`](docs/data_dictionary.md) | Raw column mapping and every mart's grain and columns. |
 | [`docs/limitations.md`](docs/limitations.md) | What this dataset cannot support — read alongside every finding. |
+| [`docs/PROJECT_PLAN.md`](docs/PROJECT_PLAN.md) | Build order, decisions, and tradeoffs — the reasoning behind the roadmap above. |
 
 ## Data & limitations
 
